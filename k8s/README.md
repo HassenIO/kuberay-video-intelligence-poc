@@ -14,7 +14,7 @@ At a high level, the manifest:
 
 - `RayService` CR creates a RayCluster. The operator creates head and worker pods and the related Services.
 - `serveConfigV2` in the manifest instructs the operator to deploy a Ray Serve application after the cluster is ready. It references `import_path: serve_app:video_service`.
-- A `ConfigMap` (created in the same manifest) contains the `serve_app.py` source and is mounted into the Ray pods at `/home/ray/serve_app.py` so the Serve runtime can import it.
+- A `ConfigMap` is generated from the repository `serve_app.py` file via Kustomize and is mounted into the Ray pods at `/home/ray/serve_app.py` so the Serve runtime can import it.
 - The containers set `PYTHONPATH=/home/ray:$PYTHONPATH` so `/home/ray` is discoverable for imports.
 - Shared memory for object store is provided by an `emptyDir` volume mounted at `/dev/shm` (medium: Memory) to avoid issues with small default `/dev/shm` sizes in some runtimes.
 - Health checks use `ray health-check` (exec probes) that query the cluster head via GCS or local raylet health endpoints. Probes are tuned with reasonable delays to avoid false failures during startup.
@@ -35,10 +35,10 @@ Follow:
 kubectl create namespace ray-system || true
 ```
 
-2. Apply the manifest:
+2. Apply the manifest via kustomize:
 
 ```bash
-kubectl apply -f k8s/rayservice-cpu.yaml -n ray-system
+kubectl apply -k k8s -n ray-system
 ```
 
 3. Watch pods until healthy:

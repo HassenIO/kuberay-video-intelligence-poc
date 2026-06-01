@@ -3,5 +3,12 @@ name = "kuberay-video-intelligence-poc"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.13"
+dependencies = [
+    "gradio>=6.15.2",
+    "numpy>=2.4.6",
+    "opencv-python-headless>=4.13.0.92",
+    "ray[serve]>=2.55.1",
+    "supervision>=0.28.0",
+    "ultralytics>=8.4.59",
+]

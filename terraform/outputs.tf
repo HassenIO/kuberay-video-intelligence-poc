@@ -7,6 +7,10 @@ output "cluster_name" {
   value = digitalocean_kubernetes_cluster.video_poc.name
 }
 
+output "cluster_id" {
+  value = digitalocean_kubernetes_cluster.video_poc.id
+}
+
 output "cluster_endpoint" {
   value = digitalocean_kubernetes_cluster.video_poc.endpoint
 }

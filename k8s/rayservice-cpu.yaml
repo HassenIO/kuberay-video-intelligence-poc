@@ -1,0 +1,173 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: video-intelligence-app
+  namespace: ray-system
+data:
+  serve_app.py: |
+    import ray
+    from ray import serve
+    import json
+
+
+    @serve.deployment(num_replicas=1)
+    class VideoService:
+        def __init__(self):
+            self.name = "VideoService"
+        
+        def __call__(self, request):
+            return {
+                "status": "healthy",
+                "service": self.name,
+                "message": "Video intelligence service is running"
+            }
+
+
+    @serve.deployment(num_replicas=1)
+    class VideoDetector:
+        def __init__(self):
+            self.model_name = "video-detector-model"
+        
+        async def __call__(self, request):
+            return {
+                "detector": self.model_name,
+                "status": "ready",
+                "message": "Video detector is operational"
+            }
+
+
+    # Ray Serve application entry point
+    video_service = serve.run(
+        VideoService.bind(),
+        name="video-detector",
+        route_prefix="/",
+    )
+
+---
+apiVersion: ray.io/v1
+kind: RayService
+metadata:
+  name: video-intelligence-service
+  namespace: ray-system
+spec:
+  serveConfigV2: |
+    applications:
+    - name: video-detector
+      import_path: serve_app:video_service
+      route_prefix: /
+      deployments:
+      - name: VideoDetector
+        num_replicas: 1
+        ray_actor_options:
+          num_cpus: 1.0
+      - name: VideoService
+        num_replicas: 1
+
+  rayClusterConfig:
+    headGroupSpec:
+      rayStartParams: {}
+      template:
+        spec:
+          containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0
+            env:
+            - name: PYTHONPATH
+              value: /home/ray:$PYTHONPATH
+            resources:
+              requests:
+                cpu: "2"
+                memory: 4Gi
+              limits:
+                cpu: "2"
+                memory: 4Gi
+            readinessProbe:
+              exec:
+                command:
+                  - bash
+                  - -c
+                  - ray health-check --address 127.0.0.1:6379 > /dev/null 2>&1 && echo ready
+              initialDelaySeconds: 20
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+            livenessProbe:
+              exec:
+                command:
+                - bash
+                - -c
+                - ray health-check --address 127.0.0.1:6379 > /dev/null 2>&1 && echo alive
+              initialDelaySeconds: 60
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: shared-mem
+            - mountPath: /home/ray/serve_app.py
+              name: app-code
+              subPath: serve_app.py
+          volumes:
+          - name: shared-mem
+            emptyDir:
+              medium: Memory
+              sizeLimit: 4Gi
+          - name: app-code
+            configMap:
+              name: video-intelligence-app
+    workerGroupSpecs:
+    - groupName: cpu-workers
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 2
+      rayStartParams: {}
+      template:
+        spec:
+          containers:
+          - name: ray-worker
+            image: rayproject/ray:2.9.0
+            env:
+            - name: PYTHONPATH
+              value: /home/ray:$PYTHONPATH
+            resources:
+              requests:
+                cpu: "1"
+                memory: 2Gi
+              limits:
+                cpu: "2"
+                memory: 3Gi
+            readinessProbe:
+              exec:
+                command:
+                - bash
+                - -c
+                - ray health-check --address $RAY_IP:6379 > /dev/null 2>&1 && echo ready
+              initialDelaySeconds: 20
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+            livenessProbe:
+              exec:
+                command:
+                - bash
+                - -c
+                - ray health-check --address $RAY_IP:6379 > /dev/null 2>&1 && echo alive
+              initialDelaySeconds: 60
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: shared-mem
+            - mountPath: /home/ray/serve_app.py
+              name: app-code
+              subPath: serve_app.py
+          volumes:
+          - name: shared-mem
+            emptyDir:
+              medium: Memory
+              sizeLimit: 3Gi
+          - name: app-code
+            configMap:
+              name: video-intelligence-app

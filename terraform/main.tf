@@ -1,7 +1,9 @@
+data "digitalocean_kubernetes_versions" "current" {}
+
 resource "digitalocean_kubernetes_cluster" "video_poc" {
   name    = "kuberay-video-poc"
   region  = "lon1"
-  version = "latest"
+  version = data.digitalocean_kubernetes_versions.current.latest_version
 
   node_pool {
     name       = "cpu-workers"

@@ -95,6 +95,11 @@ kubectl wait \
 echo "Creating ray-system namespace..."
 kubectl create namespace ray-system --dry-run=client -o yaml | kubectl apply -f -
 
+echo "Creating or updating application ConfigMap from serve_app.py..."
+kubectl create configmap video-intelligence-app \
+  --from-file=serve_app.py="$PROJECT_ROOT/serve_app.py" \
+  --dry-run=client -o yaml | kubectl apply -n ray-system -f -
+
 echo "Applying RayService manifest..."
 kubectl apply -f ./rayservice-cpu.yaml
 

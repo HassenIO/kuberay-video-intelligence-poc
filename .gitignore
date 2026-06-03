@@ -5,3 +5,6 @@
 *~
 .vscode/
 .idea/
+
+# Docs to ignore
+docs/PLAN.md

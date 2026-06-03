@@ -12,3 +12,8 @@ dependencies = [
     "supervision>=0.28.0",
     "ultralytics>=8.4.59",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.15",
+]

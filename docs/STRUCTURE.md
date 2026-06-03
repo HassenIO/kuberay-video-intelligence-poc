@@ -5,9 +5,12 @@
 - `demo.mp4` – Sample clip for exercising `app.py` without sourcing your own media.
 - `pyproject.toml` / `uv.lock` – Python project metadata and dependency lock (Ray, Ultralytics, Gradio, Supervision, OpenCV, etc.).
 - `Makefile` – Placeholder for future automation (currently empty but reserved for commands mentioned in docs).
-- `scripts/` – Shell helpers:
+- `scripts/` – Helper utilities:
   - `setup.sh` provisions DigitalOcean Kubernetes via Terraform, installs KubeRay operator, applies RayService manifest, waits for readiness.
   - `teardown.sh` destroys Terraform-managed resources and clears kube context.
+  - `ray_check.py` initialises a local Ray runtime and prints resources (used by `make ray-check`).
+  - `extract_frame.py` grabs a still frame from a video (handy for Serve smoke tests).
+  - `test_serve.sh` runs `curl` requests against the Serve endpoints and validates responses.
 - `terraform/` – Infrastructure as code: DigitalOcean cluster definition (`main.tf`), provider config, variables, outputs, tfstate artifacts, and `secrets.auto.tfvars[.example]` for API tokens.
 - `k8s/` – KubeRay manifests:
   - `kustomization.yaml` generates `video-intelligence-app` ConfigMap from `serve_app.py` and applies `rayservice-cpu.yaml`.

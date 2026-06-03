@@ -135,7 +135,7 @@ demo = gr.Interface(
     examples=[
         # Add example videos if you have them in a /videos folder
     ],
-    allow_flagging="never",
+    flagging_mode="never",
     clear_btn="Clear",
     submit_btn="Process Video with Ray + YOLO",
 )

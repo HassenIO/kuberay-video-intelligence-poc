@@ -128,5 +128,5 @@ class VideoService:
 video_detector = VideoDetector.bind()
 video_service = VideoService.bind(video_detector)
 
-# To run locally: `serve run serve_app:video_service --http-host 0.0.0.0 --http-port 8000`
+# To run locally: `RAY_SERVE_HTTP_HOST=0.0.0.0 RAY_SERVE_HTTP_PORT=8000 serve run serve_app:video_service`
 # then test with: curl -F "file=@test.jpg" http://localhost:8000/detect-image --output annotated.jpg

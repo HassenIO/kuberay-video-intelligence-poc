@@ -8,3 +8,10 @@
 
 # Docs to ignore
 docs/PLAN.md
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Model weights downloaded at runtime
+yolo*.pt

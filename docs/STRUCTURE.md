@@ -11,9 +11,12 @@
   - `ray_check.py` initialises a local Ray runtime and prints resources (used by `make ray-check`).
   - `extract_frame.py` grabs a still frame from a video (handy for Serve smoke tests).
   - `test_serve.sh` runs `curl` requests against the Serve endpoints and validates responses.
+  - `k8s_status.sh` prints pods/services/RayService status for the `ray-system` namespace.
+  - `k8s_port_forward.sh` forwards the Serve service (port 8000) and Ray dashboard (port 8265) to localhost.
+  - `k8s_test_remote.sh` temporarily port-forwards the Serve service and runs `test_serve.sh` against the remote deployment.
 - `terraform/` – Infrastructure as code: DigitalOcean cluster definition (`main.tf`), provider config, variables, outputs, tfstate artifacts, and `secrets.auto.tfvars[.example]` for API tokens.
 - `k8s/` – KubeRay manifests:
-  - `kustomization.yaml` generates `video-intelligence-app` ConfigMap from `serve_app.py` and applies `rayservice-cpu.yaml`.
+  - `kustomization.yaml` generates `video-intelligence-app` ConfigMap from `serve_app.py` (copied into the folder before `kubectl apply -k k8s`) and applies `rayservice-cpu.yaml`.
   - `rayservice-cpu.yaml` defines the RayService CRD (head + worker specs, ConfigMap mount, Serve deployments).
   - `README.md` explains deployment steps, debugging commands, and troubleshooting notes.
 - `docs/PLAN.md` – Two-phase implementation checklist (local run vs. online/Kubernetes run).

@@ -69,4 +69,47 @@ Upload a short clip (10–60 seconds). The Ray tasks chunk the video (30 frames 
 
 ## Phase 2 – Kubernetes (DigitalOcean + KubeRay)
 
-See `docs/PLAN.md` and `k8s/README.md` for full infrastructure instructions covering Terraform provisioning, KubeRay operator install, RayService deployment, and port-forwarding the Serve endpoints.
+### 1. Provision infrastructure
+
+1. Copy the token template: `cp terraform/secrets.auto.tfvars.example terraform/secrets.auto.tfvars` and add your DigitalOcean API token.
+2. Run the automated bootstrap (Terraform + operator install + RayService apply):
+
+   ```bash
+   make setup
+   ```
+
+   The script performs `terraform init/plan/apply`, saves the kubeconfig via `doctl`, installs the KubeRay operator, creates the namespace, copies `serve_app.py` into `k8s/`, forces the `video-intelligence-app` ConfigMap to regenerate in `ray-system`, and applies the manifests via `kubectl apply -k`.
+
+3. To tear everything down (Terraform destroy + kube context cleanup):
+
+   ```bash
+   make teardown
+   ```
+
+### 2. Inspect cluster state
+
+```bash
+make k8s-status           # pods, services, RayService status
+kubectl logs -n ray-system -l ray.io/node-type=head   # optional deeper dive
+```
+
+### 3. Port-forward Serve + dashboard
+
+```bash
+make k8s-port-forward
+# -> exposes http://127.0.0.1:8000 (Serve) and http://127.0.0.1:8265 (Ray dashboard)
+```
+
+Leave this command running in its own terminal; `Ctrl+C` stops the forwards.
+
+### 4. Smoke-test the remote API
+
+Reuse the local sample frame (or any image) and run:
+
+```bash
+make k8s-test IMAGE=/tmp/frame.jpg   # automatically port-forwards, curls /health, /detect-json, /detect-image
+```
+
+Once the test completes, the port-forward stops automatically.
+
+> Detailed background on the manifests, debugging commands, and scaling guidance lives in `docs/PLAN.md` and `k8s/README.md`.

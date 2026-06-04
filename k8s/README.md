@@ -14,7 +14,7 @@ At a high level, the manifest:
 
 - `RayService` CR creates a RayCluster. The operator creates head and worker pods and the related Services.
 - `serveConfigV2` in the manifest instructs the operator to deploy a Ray Serve application after the cluster is ready. It references `import_path: serve_app:video_service`.
-- A `ConfigMap` is generated from the repository `serve_app.py` file via Kustomize and is mounted into the Ray pods at `/home/ray/serve_app.py` so the Serve runtime can import it.
+- A `ConfigMap` is generated from the repository `serve_app.py` file via Kustomize (using the `k8s/serve_app.py` symlink) and is mounted into the Ray pods at `/home/ray/serve_app.py` so the Serve runtime can import it.
 - The containers set `PYTHONPATH=/home/ray:$PYTHONPATH` so `/home/ray` is discoverable for imports.
 - Shared memory for object store is provided by an `emptyDir` volume mounted at `/dev/shm` (medium: Memory) to avoid issues with small default `/dev/shm` sizes in some runtimes.
 - Health checks use `ray health-check` (exec probes) that query the cluster head via GCS or local raylet health endpoints. Probes are tuned with reasonable delays to avoid false failures during startup.
@@ -35,13 +35,20 @@ Follow:
 kubectl create namespace ray-system || true
 ```
 
-2. Apply the manifest via kustomize:
+2. Copy the latest `serve_app.py` into this folder (handled automatically by `make setup` / `make k8s-apply`, but documented for clarity):
+
+```bash
+cp ../serve_app.py ./serve_app.py
+```
+
+3. Apply the manifest via kustomize (built into `make setup` or `make k8s-apply`):
 
 ```bash
 kubectl apply -k k8s -n ray-system
+# or: make k8s-apply
 ```
 
-3. Watch pods until healthy:
+4. Watch pods until healthy:
 
 ```bash
 kubectl get pods -n ray-system -o wide
@@ -57,6 +64,8 @@ kubectl describe pod <pod-name> -n ray-system
 kubectl logs <pod-name> -n ray-system -c ray-head
 kubectl logs <pod-name> -n ray-system -c ray-worker
 ```
+
+Shortcut: `make k8s-status` prints pods, services, and RayService summaries.
 
 - Check RayService application status (shows Serve deployment statuses):
 
@@ -75,12 +84,22 @@ kubectl port-forward svc/<serve-svc-name> 8000:8000 -n ray-system
 curl -s http://127.0.0.1:8000/
 ```
 
+You can also run `make k8s-port-forward` which auto-discovers the serve/head services, forwards port 8000 (Serve) and 8265 (dashboard), and keeps both tunnels open until you press `Ctrl+C`.
+
 - Access the Ray dashboard:
 
 ```bash
 kubectl port-forward svc/<head-svc-name> 8265:8265 -n ray-system
 # then open http://127.0.0.1:8265
 ```
+
+- Run the HTTP smoke test end-to-end:
+
+```bash
+make k8s-test IMAGE=/path/to/frame.jpg
+```
+
+This command temporarily port-forwards the Serve service, hits `/health`, `/detect-json`, `/detect-image`, and then cleans up the port-forward automatically.
 
 # Troubleshooting
 

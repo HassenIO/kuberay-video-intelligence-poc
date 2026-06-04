@@ -25,4 +25,19 @@ local-ui:
 ray-stop:
 	$(UV) run ray stop || true
 
-.PHONY: setup teardown ray-check local-serve local-serve-test local-ui ray-stop
+k8s-apply:
+	cp serve_app.py k8s/serve_app.py
+	kubectl delete configmap video-intelligence-app -n ray-system --ignore-not-found || true
+	kubectl apply -k k8s
+
+k8s-status:
+	./scripts/k8s_status.sh
+
+k8s-port-forward:
+	./scripts/k8s_port_forward.sh
+
+k8s-test:
+	@if [ -z "$(IMAGE)" ]; then echo "IMAGE=<path/to/frame.jpg> is required" >&2; exit 1; fi
+	./scripts/k8s_test_remote.sh "$(IMAGE)"
+
+.PHONY: setup teardown ray-check local-serve local-serve-test local-ui ray-stop k8s-apply k8s-status k8s-port-forward k8s-test

@@ -95,13 +95,15 @@ kubectl wait \
 echo "Creating ray-system namespace..."
 kubectl create namespace ray-system --dry-run=client -o yaml | kubectl apply -f -
 
-echo "Creating or updating application ConfigMap from serve_app.py..."
-kubectl create configmap video-intelligence-app \
-  --from-file=serve_app.py="$PROJECT_ROOT/serve_app.py" \
-  --dry-run=client -o yaml | kubectl apply -n ray-system -f -
+echo "Syncing serve_app.py into k8s directory..."
+cp "$PROJECT_ROOT/serve_app.py" "$K8S_DIR/serve_app.py"
 
-echo "Applying RayService manifest..."
-kubectl apply -f ./rayservice-cpu.yaml
+echo "Ensuring ConfigMap video-intelligence-app will be recreated in ray-system..."
+kubectl delete configmap video-intelligence-app -n ray-system --ignore-not-found || true
+
+echo "Applying RayService manifest via kustomize..."
+cd "$PROJECT_ROOT"
+kubectl apply -k "$K8S_DIR"
 
 echo "Waiting for RayService pods to become ready..."
 if ! kubectl wait --for=condition=ready pod -l ray.io/service=video-intelligence-service -n ray-system --timeout=300s; then
